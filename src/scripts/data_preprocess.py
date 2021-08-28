@@ -1,86 +1,90 @@
-import numpy as np
 import cv2
-import SimpleITK as sitk
+
+from src.util.type_conversions import *
 
 
-def brain_extract(input_image: np.ndarray) -> np.ndarray:
-
-    """
-    Function to extract brain
-
-    :param input_image: Input MRI scan
-    :return: Binarized extracted brain mask
-    """
-
-    brain_mask = np.zeros(input_image.shape, np.float)
-    brain_mask[input_image > 0] = 1
-
-    return brain_mask
-
-
-def bias_field_correction(input_image: sitk.Image, mask: sitk.Image) -> sitk.Image:
+class ImagePreProcess(object):
 
     """
-    Function to perform N4 bias field correction
-
-    :param input_image: Input MRI scan
-    :param mask: Mask to specify which pixels are used to estimate the bias-field and suppress
-    pixels close to zero
-    :return: Corrected image
+    Preprocessing MRI scans
     """
 
-    bias_field_correction_filter = sitk.N4BiasFieldCorrectionImageFilter()
+    def __init__(self, input_image: sitk.Image):
+        """
+        Initialize with input scan
 
-    return bias_field_correction_filter.Execute(input_image, mask)
+        :param input_image: Input MRI scan
+        """
 
+        self.input_image = input_image
 
-def contrast_enhancement(input_image: np.ndarray) -> np.ndarray:
+    @staticmethod
+    def brain_extract(img: np.ndarray) -> np.ndarray:
+        """
+        Function to extract brain
 
-    """
-    Contrast enhancement using histogram equalization
+        :param img: Input image
+        :return: Binarized extracted brain mask
+        """
 
-    :param input_image: Input image
-    :return: Contrast enhanced image
-    """
+        brain_mask = np.zeros(img.shape, np.float)
+        brain_mask[img > 0] = 1
 
-    return cv2.equalizeHist(input_image)
+        return brain_mask
 
+    def bias_field_correction(self, mask: sitk.Image) -> sitk.Image:
+        """
+        Function to perform N4 bias field correction
 
-def normalization(input_image: np.ndarray) -> np.ndarray:
+        :param mask: Mask to specify which pixels are used to estimate the bias-field and suppress
+        pixels close to zero
+        :return: Corrected image
+        """
 
-    """
-    Image normalization by subtracting mean and dividing by standard deviation
+        bias_field_correction_filter = sitk.N4BiasFieldCorrectionImageFilter()
 
-    :param input_image: Input image
-    :return: Normalized image
-    """
+        return bias_field_correction_filter.Execute(self.input_image, mask)
 
-    input_image = input_image[input_image > 0.0]
-    normalized_image = (input_image - np.mean(input_image)) / np.std(input_image)
-    normalized_image[input_image == 0] = 0
+    @staticmethod
+    def contrast_enhancement(img: np.ndarray) -> np.ndarray:
+        """
+        Contrast enhancement using histogram equalization
 
-    return normalized_image
+        :param img: Input image
+        :return: Contrast enhanced image
+        """
 
+        return cv2.equalizeHist(img)
 
-def sitk_to_numpy(input_image: sitk.Image) -> np.ndarray:
+    @staticmethod
+    def normalization(img: np.ndarray) -> np.ndarray:
+        """
+        Image normalization by subtracting mean and dividing by standard deviation
 
-    """
-    SimpleITK image to numpy conversion
+        :param img: Input image
+        :return: Normalized image
+        """
 
-    :param input_image: SimpleITK image
-    :return: Numpy image
-    """
+        img = img[img > 0.0]
+        normalized_image = (img - np.mean(img)) / np.std(img)
+        normalized_image[img == 0] = 0
 
-    return sitk.GetArrayFromImage(input_image)
+        return normalized_image
 
+    def apply_preprocess(self) -> np.ndarray:
+        """
+        Apply preprocessing to the scan
 
-def numpy_to_sitk(input_image: np.ndarray) -> sitk.Image:
+        :return: Preprocessed scan
+        """
 
-    """
-    Numpy to SimpleITK conversion
+        numpy_image = sitk_to_numpy(self.input_image)
+        brain_mask = self.brain_extract(numpy_image)
+        sitk_mask = numpy_to_sitk(brain_mask)
+        bias_field_corrected_image = self.bias_field_correction(sitk_mask)
+        contrast_enhanced_image = self.contrast_enhancement(
+            sitk_to_numpy(bias_field_corrected_image)
+        )
+        preprocessed_image = self.normalization(contrast_enhanced_image)
 
-    :param input_image: Numpy image array
-    :return: SimpleITK image
-    """
-
-    return sitk.GetImageFromArray(input_image)
+        return preprocessed_image
