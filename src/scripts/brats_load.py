@@ -2,6 +2,7 @@ import SimpleITK as sitk
 import numpy as np
 import tensorflow as tf
 from pathlib import Path
+from typing import Tuple
 
 from src.util.definitions import BRATS_TRAIN_FOLDER, BRATS_VALIDATION_FOLDER
 from src.util.folder_check import path_check
@@ -10,17 +11,16 @@ from src.util.type_conversions import sitk_to_numpy
 
 
 class BratsLoadSave(object):
-    def __init__(self, data_path: Path, patient: str, preprocess: bool):
+    def __init__(self, data_path: Path, patient: str):
 
         """
+        Intialize data parameters
 
-        :param data_path:
-        :param patient:
-        :param preprocess:
+        :param data_path: Path to nifti scans for every patient
+        :param patient: Patient ID
         """
 
         self.data_path = data_path
-        self.preprocess = preprocess
         self.patient = patient
         self.patient_flair = f"{self.patient}_flair.nii"
         self.patient_t1 = f"{self.patient}_t1.nii"
@@ -32,10 +32,11 @@ class BratsLoadSave(object):
     def load_brats_nifti(nifti_data: str, preprocess: bool = True) -> np.ndarray:
 
         """
+        Function to load nifti images and preprocess them
 
-        :param nifti_data:
-        :param preprocess:
-        :return:
+        :param nifti_data: Nifti scans
+        :param preprocess: True for MRI scans, False for mask
+        :return: Preprocessed scans
         """
 
         loaded_image = sitk.ReadImage(nifti_data)
@@ -47,11 +48,30 @@ class BratsLoadSave(object):
 
         return sitk_to_numpy(loaded_image)
 
-    def load_preprocess(self):
+    def load_preprocess(self) -> Tuple[np.ndarray, np.ndarray]:
 
         """
+        Function to create stacked volumes of different MRI scans
 
-        :return:
+        :return: Tuple of preprocessed scans and mask (without preprocessing)
         """
 
         path_check(self.data_path)
+        flair_array = self.load_brats_nifti(
+            str(Path(self.data_path / self.patient_flair))
+        )
+        t1_array = self.load_brats_nifti(str(Path(self.data_path / self.patient_t1)))
+        t1ce_array = self.load_brats_nifti(
+            str(Path(self.data_path / self.patient_t1ce))
+        )
+        t2_array = self.load_brats_nifti(str(Path(self.data_path / self.patient_t2)))
+        mask_array = self.load_brats_nifti(
+            str(Path(self.data_path / self.patient_mask)), False
+        )
+
+        return np.stack((flair_array, t1_array, t1ce_array, t2_array)), mask_array
+
+    def nifti_to_tfrecords(self):
+
+        mri_scans, mask = self.load_preprocess()
+        # outfile
