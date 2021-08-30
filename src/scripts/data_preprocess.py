@@ -27,10 +27,10 @@ class ImagePreProcess(object):
         :return: Binarized extracted brain mask
         """
 
-        brain_mask = np.zeros(img.shape, np.float)
+        brain_mask = np.zeros_like(img)
         brain_mask[img > 0] = 1
 
-        return brain_mask
+        return brain_mask.astype(np.uint8)
 
     def bias_field_correction(self, mask: sitk.Image) -> sitk.Image:
         """

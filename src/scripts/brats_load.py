@@ -2,9 +2,8 @@ import SimpleITK as sitk
 import numpy as np
 import tensorflow as tf
 from pathlib import Path
-from typing import Tuple
+from typing import Tuple, NoReturn
 
-from src.util.definitions import BRATS_TRAIN_FOLDER, BRATS_VALIDATION_FOLDER
 from src.util.folder_check import path_check
 from src.scripts.data_preprocess import ImagePreProcess
 from src.util.type_conversions import sitk_to_numpy
@@ -29,17 +28,23 @@ class BratsLoadSave(object):
         self.patient_mask = f"{self.patient}_seg.nii"
 
     @staticmethod
-    def load_brats_nifti(nifti_data: str, preprocess: bool = True) -> np.ndarray:
+    def load_brats_nifti(
+        nifti_data: str, preprocess: bool = True, mask: bool = False
+    ) -> np.ndarray:
 
         """
         Function to load nifti images and preprocess them
 
         :param nifti_data: Nifti scans
         :param preprocess: True for MRI scans, False for mask
+        :param mask: True if mask, False for MRI scans
         :return: Preprocessed scans
         """
 
-        loaded_image = sitk.ReadImage(nifti_data)
+        if mask:
+            loaded_image = sitk.ReadImage(nifti_data, sitk.sitkUInt8)
+        else:
+            loaded_image = sitk.ReadImage(nifti_data)
 
         if preprocess:
             pre = ImagePreProcess(loaded_image)
@@ -66,7 +71,7 @@ class BratsLoadSave(object):
         )
         t2_array = self.load_brats_nifti(str(Path(self.data_path / self.patient_t2)))
         mask_array = self.load_brats_nifti(
-            str(Path(self.data_path / self.patient_mask)), False
+            str(Path(self.data_path / self.patient_mask)), False, True
         )
 
         return np.stack((flair_array, t1_array, t1ce_array, t2_array)), mask_array
@@ -79,13 +84,13 @@ class BratsLoadSave(object):
     def __bytes_feature(value):
         return tf.train.Feature(bytes_list=tf.train.BytesList(value=[value]))
 
-    def __serialize(self, scans: np.ndarray, masks: np.ndarray):
+    def __serialize(self, scans: np.ndarray, masks: np.ndarray) -> NoReturn:
 
         """
+        Tfrecords serialize
 
-        :param scans: 
-        :param masks:
-        :return:
+        :param scans: MRI scan volumes
+        :param masks: Tumour masks
         """
 
         writer = tf.io.TFRecordWriter(str(self.data_path.stem) + ".tfrecords")
