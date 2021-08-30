@@ -71,7 +71,39 @@ class BratsLoadSave(object):
 
         return np.stack((flair_array, t1_array, t1ce_array, t2_array)), mask_array
 
+    @staticmethod
+    def __int64_feature(value):
+        return tf.train.Feature(int64_list=tf.train.Int64List(value=[value]))
+
+    @staticmethod
+    def __bytes_feature(value):
+        return tf.train.Feature(bytes_list=tf.train.BytesList(value=[value]))
+
+    def __serialize(self, scans: np.ndarray, masks: np.ndarray):
+
+        """
+
+        :param scans: 
+        :param masks:
+        :return:
+        """
+
+        writer = tf.io.TFRecordWriter(str(self.data_path.stem) + ".tfrecords")
+        scans_raw = scans.tostring()
+        masks_raw = masks.tostring()
+
+        features = tf.train.Features(
+            feature={
+                "patient_id": self.__int64_feature(self.patient),
+                "scan": self.__bytes_feature(scans_raw),
+                "mask": self.__bytes_feature(masks_raw),
+            }
+        )
+        feature_example = tf.train.Example(features=features)
+        writer.write(feature_example.SerializeToString())
+        writer.close()
+
     def nifti_to_tfrecords(self):
 
         mri_scans, mask = self.load_preprocess()
-        # outfile
+        self.__serialize(mri_scans, mask)
