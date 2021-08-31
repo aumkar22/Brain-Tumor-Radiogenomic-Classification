@@ -1,5 +1,6 @@
 import SimpleITK as sitk
 import numpy as np
+import nibabel as nib
 import tensorflow as tf
 from pathlib import Path
 from typing import Tuple, NoReturn
@@ -28,9 +29,7 @@ class BratsLoadSave(object):
         self.patient_mask = f"{self.patient}_seg.nii"
 
     @staticmethod
-    def load_brats_nifti(
-        nifti_data: str, preprocess: bool = True, mask: bool = False
-    ) -> np.ndarray:
+    def load_brats_nifti(nifti_data: str, preprocess: bool = True) -> np.ndarray:
 
         """
         Function to load nifti images and preprocess them
@@ -41,17 +40,16 @@ class BratsLoadSave(object):
         :return: Preprocessed scans
         """
 
-        if mask:
-            loaded_image = sitk.ReadImage(nifti_data, sitk.sitkUInt8)
-        else:
-            loaded_image = sitk.ReadImage(nifti_data)
+        loaded_image = nib.load(nifti_data)
+        loaded_image.uncache()
+        loaded_image = np.array(loaded_image.dataobj)
 
         if preprocess:
             pre = ImagePreProcess(loaded_image)
             preprocessed_image = pre.apply_preprocess()
-            return preprocessed_image
+            return preprocessed_image.reshape(loaded_image.shape)
 
-        return sitk_to_numpy(loaded_image)
+        return loaded_image
 
     def load_preprocess(self) -> Tuple[np.ndarray, np.ndarray]:
 
@@ -71,7 +69,7 @@ class BratsLoadSave(object):
         )
         t2_array = self.load_brats_nifti(str(Path(self.data_path / self.patient_t2)))
         mask_array = self.load_brats_nifti(
-            str(Path(self.data_path / self.patient_mask)), False, True
+            str(Path(self.data_path / self.patient_mask)), False
         )
 
         return np.stack((flair_array, t1_array, t1ce_array, t2_array)), mask_array
@@ -93,13 +91,15 @@ class BratsLoadSave(object):
         :param masks: Tumour masks
         """
 
-        writer = tf.io.TFRecordWriter(str(self.data_path.stem) + ".tfrecords")
+        writer = tf.io.TFRecordWriter(
+            str(Path(self.data_path / self.data_path.stem)) + ".tfrecords"
+        )
         scans_raw = scans.tostring()
         masks_raw = masks.tostring()
 
         features = tf.train.Features(
             feature={
-                "patient_id": self.__int64_feature(self.patient),
+                "patient_id": self.__int64_feature(int(self.patient[-3:])),
                 "scan": self.__bytes_feature(scans_raw),
                 "mask": self.__bytes_feature(masks_raw),
             }

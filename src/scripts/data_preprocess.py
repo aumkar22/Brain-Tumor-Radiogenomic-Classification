@@ -1,4 +1,4 @@
-import cv2
+from skimage import exposure
 
 from src.util.type_conversions import *
 
@@ -9,7 +9,7 @@ class ImagePreProcess(object):
     Preprocessing MRI scans
     """
 
-    def __init__(self, input_image: sitk.Image):
+    def __init__(self, input_image: np.ndarray):
         """
         Initialize with input scan
 
@@ -19,33 +19,6 @@ class ImagePreProcess(object):
         self.input_image = input_image
 
     @staticmethod
-    def brain_extract(img: np.ndarray) -> np.ndarray:
-        """
-        Function to extract brain
-
-        :param img: Input image
-        :return: Binarized extracted brain mask
-        """
-
-        brain_mask = np.zeros_like(img)
-        brain_mask[img > 0] = 1
-
-        return brain_mask.astype(np.uint8)
-
-    def bias_field_correction(self, mask: sitk.Image) -> sitk.Image:
-        """
-        Function to perform N4 bias field correction
-
-        :param mask: Mask to specify which pixels are used to estimate the bias-field and suppress
-        pixels close to zero
-        :return: Corrected image
-        """
-
-        bias_field_correction_filter = sitk.N4BiasFieldCorrectionImageFilter()
-
-        return bias_field_correction_filter.Execute(self.input_image, mask)
-
-    @staticmethod
     def contrast_enhancement(img: np.ndarray) -> np.ndarray:
         """
         Contrast enhancement using histogram equalization
@@ -53,8 +26,7 @@ class ImagePreProcess(object):
         :param img: Input image
         :return: Contrast enhanced image
         """
-
-        return cv2.equalizeHist(img)
+        return exposure.equalize_hist(img)
 
     @staticmethod
     def normalization(img: np.ndarray) -> np.ndarray:
@@ -78,13 +50,7 @@ class ImagePreProcess(object):
         :return: Preprocessed scan
         """
 
-        numpy_image = sitk_to_numpy(self.input_image)
-        brain_mask = self.brain_extract(numpy_image)
-        sitk_mask = numpy_to_sitk(brain_mask)
-        bias_field_corrected_image = self.bias_field_correction(sitk_mask)
-        contrast_enhanced_image = self.contrast_enhancement(
-            sitk_to_numpy(bias_field_corrected_image)
-        )
+        contrast_enhanced_image = self.contrast_enhancement(self.input_image)
         preprocessed_image = self.normalization(contrast_enhanced_image)
 
         return preprocessed_image
