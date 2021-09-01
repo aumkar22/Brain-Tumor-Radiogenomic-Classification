@@ -19,7 +19,6 @@ def read_csv(csv_path: Path) -> NoReturn:
         for row in reader:
             brats = BratsLoadSave(Path(csv_path.parent / row[5]), row[5])
             brats.nifti_to_tfrecords()
-            breakpoint()
 
 
 if __name__ == "__main__":

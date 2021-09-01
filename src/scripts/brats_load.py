@@ -36,13 +36,12 @@ class BratsLoadSave(object):
 
         :param nifti_data: Nifti scans
         :param preprocess: True for MRI scans, False for mask
-        :param mask: True if mask, False for MRI scans
         :return: Preprocessed scans
         """
 
         loaded_image = nib.load(nifti_data)
         loaded_image.uncache()
-        loaded_image = np.array(loaded_image.dataobj)
+        loaded_image = np.asarray(loaded_image.dataobj)
 
         if preprocess:
             pre = ImagePreProcess(loaded_image)
