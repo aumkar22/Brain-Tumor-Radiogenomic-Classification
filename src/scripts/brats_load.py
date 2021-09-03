@@ -1,4 +1,3 @@
-import SimpleITK as sitk
 import numpy as np
 import nibabel as nib
 import tensorflow as tf
@@ -6,8 +5,7 @@ from pathlib import Path
 from typing import Tuple, NoReturn
 
 from src.util.folder_check import path_check
-from src.scripts.data_preprocess import ImagePreProcess
-from src.util.type_conversions import sitk_to_numpy
+from src.preprocessing.data_preprocess import ImagePreProcess
 
 
 class BratsLoadSave(object):
@@ -70,7 +68,7 @@ class BratsLoadSave(object):
         mask_array = self.load_brats_nifti(
             str(Path(self.data_path / self.patient_mask)), False
         )
-
+        breakpoint()
         return np.stack((flair_array, t1_array, t1ce_array, t2_array)), mask_array
 
     @staticmethod
