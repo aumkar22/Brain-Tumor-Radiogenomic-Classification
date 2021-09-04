@@ -2,14 +2,14 @@ import numpy as np
 import nibabel as nib
 import tensorflow as tf
 from pathlib import Path
-from typing import Tuple, NoReturn
+from typing import Union, NoReturn
 
 from src.util.folder_check import path_check
 from src.preprocessing.data_preprocess import ImagePreProcess
 
 
 class BratsLoadSave:
-    def __init__(self, data_path: Path, patient: str):
+    def __init__(self, data_path: Path, patient: str, train: bool = False):
 
         """
         Intialize data parameters
@@ -24,7 +24,9 @@ class BratsLoadSave:
         self.patient_t1 = f"{self.patient}_t1.nii"
         self.patient_t1ce = f"{self.patient}_t1ce.nii"
         self.patient_t2 = f"{self.patient}_t2.nii"
-        self.patient_mask = f"{self.patient}_seg.nii"
+        self.train = train
+        if self.train:
+            self.patient_mask = f"{self.patient}_seg.nii"
 
     @staticmethod
     def load_brats_nifti(nifti_data: str, preprocess: bool = True) -> np.ndarray:
@@ -48,7 +50,7 @@ class BratsLoadSave:
 
         return loaded_image
 
-    def load_preprocess(self) -> Tuple[np.ndarray, np.ndarray]:
+    def load_preprocess(self) -> np.ndarray:
 
         """
         Function to create stacked volumes of different MRI scans
@@ -65,11 +67,8 @@ class BratsLoadSave:
             str(Path(self.data_path / self.patient_t1ce))
         )
         t2_array = self.load_brats_nifti(str(Path(self.data_path / self.patient_t2)))
-        mask_array = self.load_brats_nifti(
-            str(Path(self.data_path / self.patient_mask)), False
-        )
 
-        return np.stack((flair_array, t1_array, t1ce_array, t2_array)), mask_array
+        return np.stack((flair_array, t1_array, t1ce_array, t2_array))
 
     @staticmethod
     def __int64_feature(value):
@@ -79,33 +78,48 @@ class BratsLoadSave:
     def __bytes_feature(value):
         return tf.train.Feature(bytes_list=tf.train.BytesList(value=[value]))
 
-    def __serialize(self, scans: np.ndarray, masks: np.ndarray) -> NoReturn:
+    def __serialize(
+        self, scans: np.ndarray, masks: Union[np.ndarray, None]
+    ) -> NoReturn:
 
         """
         Tfrecords serialize
 
         :param scans: MRI scan volumes
-        :param masks: Tumour masks
+        :param masks: Tumour masks (None for val/test set)
         """
 
         writer = tf.io.TFRecordWriter(
             str(Path(self.data_path / self.data_path.stem)) + ".tfrecords"
         )
         scans_raw = scans.tostring()
-        masks_raw = masks.tostring()
 
-        features = tf.train.Features(
-            feature={
+        if self.train:
+            masks_raw = masks.tostring()
+            feature = {
                 "patient_id": self.__int64_feature(int(self.patient[-3:])),
                 "scan": self.__bytes_feature(scans_raw),
                 "mask": self.__bytes_feature(masks_raw),
             }
-        )
+        else:
+            feature = {
+                "patient_id": self.__int64_feature(int(self.patient[-3:])),
+                "scan": self.__bytes_feature(scans_raw),
+            }
+
+        features = tf.train.Features(feature=feature)
         feature_example = tf.train.Example(features=features)
         writer.write(feature_example.SerializeToString())
         writer.close()
 
     def nifti_to_tfrecords(self):
 
-        mri_scans, mask = self.load_preprocess()
-        self.__serialize(mri_scans, mask)
+        mri_scans = self.load_preprocess()
+
+        if self.train:
+            mask = self.load_brats_nifti(
+                str(Path(self.data_path / self.patient_mask)), False
+            )
+            self.__serialize(mri_scans, mask)
+        else:
+            self.__serialize(mri_scans, None)
