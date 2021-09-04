@@ -3,7 +3,7 @@ from skimage import exposure
 from src.util.type_conversions import *
 
 
-class ImagePreProcess(object):
+class ImagePreProcess:
 
     """
     Preprocessing MRI scans
