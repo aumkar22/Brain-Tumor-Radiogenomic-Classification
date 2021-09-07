@@ -15,6 +15,14 @@ class Patching:
         self.scans = scans
         self.patch_size = patch_size
 
+
+    def check_if_all_no_tumour(self, patch_mask: np.ndarray):
+
+        if np.all(patch_mask == 0):
+
+
+
+
     def random_center_tumor(self):
 
         tumor_indices = np.nonzero(self.mask)
