@@ -1,7 +1,6 @@
 import math
 import random
 import tensorflow as tf
-import tensorflow_io as tfio
 import pandas as pd
 
 from typing import NoReturn
@@ -46,7 +45,7 @@ class RsnaDataGenerator(Sequence):
 
     def on_epoch_end(self) -> NoReturn:
         """
-        Method that is called once training has finished an epoch. The only thing we need to do in
+        Method that is called once training has finished an epoch. The only thing to do in
         those situations is shuffling the indices if that's been enabled in the constructor.
         :return: No return.
         """
