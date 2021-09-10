@@ -1,7 +1,6 @@
 import tensorflow as tf
 
 from abc import ABC, abstractmethod
-from pathlib import Path
 
 
 class DataLoad(ABC):
@@ -32,7 +31,7 @@ class DataLoad(ABC):
         pass
 
     @abstractmethod
-    def perform_preprocess(self):
+    def perform_preprocess(self, image_volume: tf.Tensor):
         """
         Function to apply preprocessing
 
