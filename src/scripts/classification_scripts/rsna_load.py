@@ -57,6 +57,19 @@ class RsnaLoad(DataLoad):
             self.perform_preprocess, num_parallel_calls=tf.data.AUTOTUNE
         )
 
+    def __serialize(self):
+
+        writer = tf.io.TFRecordWriter(
+            str(Path(self.data_path / self.data_path.stem)) + ".tfrecords"
+        )
+        features = tf.train.Features(
+            feature={
+                "patient_id": self.__int64_feature(int(self.patient[-3:])),
+                "scan": self.__bytes_feature(scans_raw),
+                "mask": self.__bytes_feature(masks_raw),
+            }
+        )
+
     def data_to_tfrecords(self):
 
         writer = tf.io.TFRecordWriter(

@@ -1,6 +1,8 @@
 import tensorflow as tf
 import pandas as pd
+import numpy as np
 
+from typing import Tuple, List
 from sklearn.model_selection import GroupKFold
 
 
@@ -8,9 +10,10 @@ from sklearn.model_selection import GroupKFold
 def normalization(image_volume: tf.Tensor) -> tf.Tensor:
 
     """
+    Image normalization by subtracting mean and dividing by standard deviation
 
-    :param image_volume:
-    :return:
+    :param image_volume: Input image volume tensor
+    :return: Normalized tensor
     """
 
     normalized_image = (
@@ -51,20 +54,28 @@ def tf_equalize_histogram(image_volume: tf.Tensor) -> tf.Tensor:
     return eq_hist
 
 
-def data_split(data_df: pd.DataFrame, group: str, n_splits: int):
+def data_split(
+    data_df: pd.DataFrame, group: str, n_splits: int = 5
+) -> Tuple[List[np.ndarray], List[np.ndarray]]:
 
     """
+    Function to split the data into training and validation sets.
+    Seed not added as GroupKFold is not randomized.
 
-    :param data_df:
-    :param group:
-    :param n_splits:
+    :param data_df: Input dataframe
+    :param group: Groups on which split should be made
+    :param n_splits: Number of folds for cross validation
     :return:
     """
 
     group_fold = GroupKFold(n_splits=n_splits)
+    train_indices = []
+    validation_indices = []
 
-    for fold, (train_indices, val_indices) in enumerate(
+    for train_index, val_index in enumerate(
         group_fold.split(data_df, groups=data_df[group])
     ):
+        train_indices.append(train_index)
+        validation_indices.append(val_index)
 
-        data_df.loc[val_indices, "fold"] = fold
+    return train_indices, validation_indices
