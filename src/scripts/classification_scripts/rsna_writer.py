@@ -3,7 +3,7 @@ import csv
 
 from typing import NoReturn
 
-from src.scripts.classification_scripts.rsna_load import RsnaLoad
+from src.scripts.classification_scripts.rsna_load_new import RsnaLoad
 from src.util.definitions import *
 
 
@@ -18,8 +18,8 @@ def read_rsna_csv(rsna_csv: Path) -> NoReturn:
         reader = csv.reader(f, skipinitialspace=True)
         next(reader, None)
         for row in reader:
-            breakpoint()
-            patient_id = row[0]
+            rsna = RsnaLoad(TRAIN_FOLDER, row[0].zfill(5), int(row[1]))
+            rsna.data_load()
 
 
 if __name__ == "__main__":
