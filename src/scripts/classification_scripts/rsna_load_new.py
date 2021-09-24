@@ -33,15 +33,14 @@ class RsnaLoad:
         :param dicom_array:
         :return:
         """
-        # breakpoint()
-        thresh = cv2.threshold(dicom_array, 45, 255, cv2.THRESH_BINARY)[1]
-        thresh = cv2.erode(thresh, None, iterations=2)
-        thresh = cv2.dilate(thresh, None, iterations=2)
+
+        # thresh = cv2.threshold(dicom_array, 45, 255, cv2.THRESH_BINARY)[1]
+        # thresh = cv2.erode(thresh, None, iterations=2)
+        # thresh = cv2.dilate(thresh, None, iterations=2)
 
         cnts = cv2.findContours(
-            thresh.copy(), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE
+            dicom_array.copy(), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE
         )
-        breakpoint()
         cnts = imutils.grab_contours(cnts)
         c = max(cnts, key=cv2.contourArea)
 
@@ -54,14 +53,15 @@ class RsnaLoad:
 
     def dicom_load(self, dicom_file: str) -> np.ndarray:
         dicom_data = dicom.read_file(dicom_file).pixel_array
+        # breakpoint()
+        # cropped_dicom = self.crop_dicom(dicom_data)
         resized_dicom = cv2.resize(dicom_data, (self.resize_shape, self.resize_shape))
-        cropped_dicom = self.crop_dicom(cv2.convertScaleAbs(resized_dicom))
-        return np.expand_dims(cropped_dicom, axis=-1)
+        return np.expand_dims(resized_dicom, axis=-1)
 
     def data_load(self):
         dicom_path = Path(self.data_path / f"{self.patient}" / "FLAIR")
         dicom_list = [str(i) for i in dicom_path.glob(r"**/*.dcm")]
-
+        dicom_list.sort(key=lambda x: int(x.split("-")[-1][:-4]))
         middle_dicom = len(dicom_list) // 2
         divide_images = self.num_images // 2
 
@@ -74,6 +74,9 @@ class RsnaLoad:
         # breakpoint()
         dicom_volume = np.stack(dicom_data)
         preprocessed_dicom_volume = self.perform_preprocess(dicom_volume)
+
+        trimmed = self.trim(preprocessed_dicom_volume, preprocessed_dicom_volume != 0)
+        trimmed_ = np.split(trimmed, preprocessed_dicom_volume.shape[-1], -1)
         breakpoint()
 
     @staticmethod
@@ -81,3 +84,19 @@ class RsnaLoad:
         pre = ImagePreProcess(image_volume)
         preprocessed_image = pre.apply_preprocess()
         return preprocessed_image.reshape(image_volume.shape)
+
+    @staticmethod
+    def trim(arr, mask):
+        bounding_box = tuple(
+            slice(np.min(indexes), np.max(indexes) + 1) for indexes in np.where(mask)
+        )
+        return arr[bounding_box]
+
+
+# if __name__ == "__main__":
+#
+#     import matplotlib.pyplot as plt
+#
+#     plt.imshow(np.squeeze(dicom_data[0]), cmap="gray")
+#     plt.imshow(np.squeeze(preprocessed_dicom_volume[0]), cmap="gray")
+#     plt.show()
