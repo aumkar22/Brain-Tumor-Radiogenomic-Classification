@@ -2,6 +2,7 @@ import pydicom as dicom
 import numpy as np
 import cv2
 import imutils
+import tensorflow as tf
 
 from pathlib import Path
 
@@ -68,6 +69,7 @@ class RsnaLoad:
             ),
             axis=-1,
         )
+
         breakpoint()
 
     @staticmethod
@@ -84,7 +86,7 @@ class RsnaLoad:
     @staticmethod
     def crop_slice(arr, mask):
         """
-        
+
         :param arr:
         :param mask:
         :return:
