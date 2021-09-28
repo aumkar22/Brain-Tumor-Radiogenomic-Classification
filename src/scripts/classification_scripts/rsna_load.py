@@ -1,77 +1,136 @@
-import tensorflow_io as tfio
-import numpy as np
+import pydicom as dicom
+import cv2
 
 from pathlib import Path
+from typing import NoReturn
 
-from src.preprocessing.rsna_preprocess import *
-from src.scripts.data_load import *
+from src.preprocessing.data_preprocess import *
 
 
-class RsnaLoad(DataLoad):
-    def __init__(self, data_path: Path, patient: str, label: int):
+class RsnaLoad:
+
+    """
+    Data loading class for RSNA data
+    """
+
+    def __init__(
+        self,
+        data_path: Path,
+        patient: str,
+        label: int,
+        num_images: int = 30,
+        resize_shape: int = 240,
+        train: bool = True,
+    ):
+
+        """
+        Class initializations
+
+        :param data_path: Path to dicom files
+        :param patient: Patient ID
+        :param label: Ground truth (MGMT value)
+        :param num_images: Number of images to be selected for creating 3D volumes
+        :param resize_shape: Resizing shape
+        :param train: True for loading train/validation data, False for test data
+        """
         self.data_path = data_path
         self.patient = patient
-        self.label = label
+        self.train = train
+        if self.train:
+            self.label = label
+        self.num_images = num_images
+        self.resize_shape = resize_shape
 
     @staticmethod
-    def dicom_read(dicom_file: str) -> np.ndarray:
+    def dicom_load(dicom_file: str) -> np.ndarray:
         """
-        Function to read one dicom file and convert to a numpy array
+        Read dicom file
 
-        :param dicom_file: Path to dicom file
-        :return: Numpy array converted from dicom file
-        """
-        dicom_bytes = tf.io.read_file(dicom_file)
-        dicom_decoded = tfio.image.decode_dicom_image(dicom_bytes, dtype=tf.uint16)
-
-        return dicom_decoded.numpy()
-
-    def perform_preprocess(self, image_volume: tf.Tensor) -> tf.Tensor:
+        :param dicom_file: Dicom file path
+        :return: Dicom data as a numpy array
         """
 
-        :return:
+        return dicom.read_file(dicom_file).pixel_array
+
+    def data_load(self) -> np.ndarray:
         """
+        Load and preprocess mri slices
 
-        contrast_enhanced_image = tf_equalize_histogram(image_volume)
-        normalized_image = normalization(contrast_enhanced_image)
-
-        return tf.reshape(normalized_image, tf.shape(image_volume))
-
-    def data_load(self):
-
+        :return: Return cropped, preprocessed and stacked scan volumes
         """
+        if self.train:
+            dicom_path = Path(self.data_path.parent / "train" / self.patient / "FLAIR")
+        else:
+            dicom_path = Path(self.data_path.parent / "test" / self.patient / "FLAIR")
 
-        :return:
-        """
-
-        dicom_path = Path(self.data_path / f"{self.patient}" / "FLAIR")
         dicom_list = [str(i) for i in dicom_path.glob(r"**/*.dcm")]
+        dicom_list.sort(key=lambda x: int(x.split("-")[-1][:-4]))
+        middle_dicom = len(dicom_list) // 2
+        divide_images = self.num_images // 2
+
+        left_end = max(0, middle_dicom - divide_images)
+        right_end = min(len(dicom_list), middle_dicom + divide_images)
         dicom_data = []
-        for dicom_index, dicom_file in enumerate(dicom_list):
-            dicom_data.append(self.dicom_read(dicom_file))
+        for dicom_index, dicom_file in enumerate(dicom_list[left_end:right_end]):
+            dicom_data.append(self.dicom_load(dicom_file))
 
         dicom_volume = np.stack(dicom_data)
-
-        tf_dataset = tf.data.Dataset.from_tensor_slices(dicom_volume)
-        tf_dataset = tf_dataset.map(
-            self.perform_preprocess, num_parallel_calls=tf.data.AUTOTUNE
+        preprocessed_dicom_volume = self.perform_preprocess(dicom_volume)
+        cropped_dicom = self.crop_slice(
+            preprocessed_dicom_volume, preprocessed_dicom_volume > 0
         )
 
-    def __serialize(self):
-
-        writer = tf.io.TFRecordWriter(
-            str(Path(self.data_path / self.data_path.stem)) + ".tfrecords"
-        )
-        features = tf.train.Features(
-            feature={
-                "patient_id": self.__int64_feature(int(self.patient[-3:])),
-                "scan": self.__bytes_feature(scans_raw),
-                "mask": self.__bytes_feature(masks_raw),
-            }
+        resize_cropped_dicom = np.array(
+            [
+                cv2.resize(dicom_slice, (self.resize_shape, self.resize_shape))
+                for dicom_slice in cropped_dicom
+            ]
         )
 
-    def data_to_tfrecords(self):
+        return resize_cropped_dicom
 
-        writer = tf.io.TFRecordWriter(
-            str(Path(self.data_path / self.data_path.stem)) + ".tfrecords"
-        )
+    def save_npy_volume(self) -> NoReturn:
+
+        """
+        Save scan volumes
+        """
+
+        dicom_volume = self.data_load()
+        if self.train:
+            np.savez_compressed(
+                str(self.data_path / (self.patient + ".npz")),
+                flair_volume=dicom_volume,
+                label=np.array([float(self.label)]),
+            )
+        else:
+            np.savez_compressed(
+                str(self.data_path / (self.patient + ".npz")), flair_volume=dicom_volume
+            )
+
+    @staticmethod
+    def perform_preprocess(image_volume: np.ndarray) -> np.ndarray:
+        """
+        Perform preprocessing on scan volumes
+
+        :param image_volume: Scan volume
+        :return: Preprocessed scan volume
+        """
+        pre = ImagePreProcess(image_volume)
+        preprocessed_image = pre.apply_preprocess()
+        return preprocessed_image.reshape(image_volume.shape)
+
+    @staticmethod
+    def crop_slice(scan_volume, mask) -> np.ndarray:
+        """
+        Crop out black edges from slices
+
+        :param scan_volume: Scan volume
+        :param mask: Non-black mask
+        :return: Cropped scan volume
+        """
+        return scan_volume[
+            tuple(
+                slice(np.min(indexes), np.max(indexes) + 1)
+                for indexes in np.where(mask)
+            )
+        ]
