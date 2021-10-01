@@ -1,5 +1,6 @@
 import math
 import numpy as np
+import tensorflow as tf
 
 from typing import Union, Tuple, List
 from tensorflow.keras.utils import Sequence
@@ -32,9 +33,7 @@ class RsnaDataGenerator(Sequence):
         """
         return int(math.ceil(len(self.data_path) / self.batch_size))
 
-    def __getitem__(
-        self, index: int
-    ) -> Union[Tuple[np.ndarray, np.ndarray], np.ndarray]:
+    def __getitem__(self, index: int) -> Union[Tuple[tf.Tensor, tf.Tensor], tf.Tensor]:
 
         """
         Create and return a batch of data and corresponding labels.
@@ -48,15 +47,19 @@ class RsnaDataGenerator(Sequence):
         end_index = (index + 1) * self.batch_size
         batch_path = self.data_path[start_index:end_index]
 
-        feature_batch = np.array(
-            [
-                np.expand_dims(np.load(feature)["flair_volume"], axis=-1)
-                for feature in batch_path
-            ]
+        feature_batch = tf.convert_to_tensor(
+            np.array(
+                [
+                    np.expand_dims(np.load(feature)["flair_volume"], axis=-1)
+                    for feature in batch_path
+                ]
+            ),
+            dtype=tf.float32,
         )
         if self.train:
-            label_batch = np.array(
-                [np.load(feature)["label"] for feature in batch_path]
+            label_batch = tf.convert_to_tensor(
+                np.array([np.load(feature)["label"] for feature in batch_path]),
+                dtype=tf.float32,
             )
             return feature_batch, label_batch
         else:
