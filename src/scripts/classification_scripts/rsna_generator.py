@@ -27,7 +27,7 @@ class RsnaDataGenerator(Sequence):
     def __len__(self) -> int:
         """
         Calculate the number of batches that can be created using the provided batch size.
-        
+
         :return: Number of batches.
         """
         return int(math.ceil(len(self.data_path) / self.batch_size))
