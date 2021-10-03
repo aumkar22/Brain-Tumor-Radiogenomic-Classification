@@ -46,19 +46,25 @@ def create_splits(rsna_csv: Path) -> Tuple[pd.DataFrame, pd.DataFrame]:
     return labels_csv.iloc[train_indices], labels_csv.iloc[val_indices]
 
 
-def read_rsna_csv(rsna_csv: Path) -> NoReturn:
+def read_rsna_csv(rsna_csv: Path, train: bool) -> NoReturn:
 
     """
     Function to read csv with patient ID and corresponding label and save preprocessed data
 
     :param rsna_csv: Path to the csv file
+    :param train: True for train/validation, False for test
     """
 
     with open(str(rsna_csv), "r") as f:
         reader = csv.reader(f, skipinitialspace=True)
         next(reader, None)
         for row in reader:
-            rsna = RsnaLoad(rsna_csv.parent, row[0].zfill(5), int(row[1]))
+            if train:
+                rsna = RsnaLoad(
+                    rsna_csv.parent, row[0].zfill(5), int(row[1]), train=train
+                )
+            else:
+                rsna = RsnaLoad(rsna_csv.parent, row[0].zfill(5), None, train=train)
             rsna.save_npy_volume()
 
 
@@ -67,5 +73,6 @@ if __name__ == "__main__":
     train_df, val_df = create_splits(TRAIN_LABELS)
     to_csv(train_df, DATA_FOLDER, True)
     to_csv(val_df, DATA_FOLDER)
-    read_rsna_csv(Path(DATA_FOLDER / "train_npy" / "data_labels.csv"))
-    read_rsna_csv(Path(DATA_FOLDER / "validation_npy" / "data_labels.csv"))
+    read_rsna_csv(Path(DATA_FOLDER / "train_npy" / "data_labels.csv"), True)
+    read_rsna_csv(Path(DATA_FOLDER / "validation_npy" / "data_labels.csv"), True)
+    read_rsna_csv(Path(DATA_FOLDER / "test_npy" / "sample_submission.csv"), False)

@@ -2,7 +2,7 @@ import pydicom as dicom
 import cv2
 
 from pathlib import Path
-from typing import NoReturn
+from typing import NoReturn, Union
 
 from src.preprocessing.data_preprocess import *
 
@@ -17,7 +17,7 @@ class RsnaLoad:
         self,
         data_path: Path,
         patient: str,
-        label: int,
+        label: Union[int, None],
         num_images: int = 30,
         resize_shape: int = 240,
         train: bool = True,
@@ -36,8 +36,7 @@ class RsnaLoad:
         self.data_path = data_path
         self.patient = patient
         self.train = train
-        if self.train:
-            self.label = label
+        self.label = label
         self.num_images = num_images
         self.resize_shape = resize_shape
 
@@ -86,6 +85,16 @@ class RsnaLoad:
                 for dicom_slice in cropped_dicom
             ]
         )
+
+        if resize_cropped_dicom.shape[0] < self.num_images:
+            zero_matrix = np.zeros(
+                (
+                    self.num_images - resize_cropped_dicom.shape[0],
+                    self.resize_shape,
+                    self.resize_shape,
+                )
+            )
+            return np.concatenate((resize_cropped_dicom, zero_matrix), axis=0)
 
         return resize_cropped_dicom
 
