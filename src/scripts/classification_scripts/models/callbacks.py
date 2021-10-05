@@ -39,9 +39,9 @@ def get_callbacks(save_path: Path) -> Tuple:
     """
 
     path_check(save_path, True)
-    early_stopping = EarlyStopping(monitor="val_loss", patience=3)
+    early_stopping = EarlyStopping(monitor="val_roc_auc", patience=3, mode="max")
     model_checkpoint = ModelCheckpoint(
-        filepath=save_path, monitor="val_loss", save_best_only=True
+        filepath=save_path, monitor="val_roc_auc", save_best_only=True, mode="max"
     )
     step_decay_lr = LearningRateScheduler(step_decay)
 

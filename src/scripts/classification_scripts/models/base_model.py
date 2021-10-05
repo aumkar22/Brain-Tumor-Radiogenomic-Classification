@@ -10,8 +10,13 @@ from tensorflow.keras.layers import (
     Dense,
 )
 from tensorflow.keras.models import Model
+from tensorflow.keras.optimizers import Adam
+from tensorflow.keras.metrics import AUC
+from tensorflow.keras.callbacks import Callback
+from typing import List, Tuple
 
 from src.scripts.classification_scripts.models.residual_layer import Residual
+from src.scripts.classification_scripts.models.callbacks import get_callbacks
 
 
 class ResNet:
@@ -34,6 +39,7 @@ class ResNet:
         Nfc2,
         dropout1,
         dropout2,
+        save_path,
         out=1,
         input_shape=(30, 240, 240, 1),
     ):
@@ -57,6 +63,7 @@ class ResNet:
         self.dropout2 = dropout2
         self.out = out
         self.input_shape = input_shape
+        self.save_path = save_path
 
     def model(self) -> tf.Model:
 
@@ -101,3 +108,32 @@ class ResNet:
         out = Dense(self.out, activation="sigmoid")(model)
 
         return Model(inputs=[model_input], outputs=out)
+
+    def model_compile(
+        self,
+        print_summary: bool = False,
+        beta1: float = 0.9,
+        beta2: float = 0.999,
+        epsilon: float = 1e-8,
+    ) -> Tuple[tf.Model, List[Callback]]:
+        """
+        Function to compile the model
+        
+        :param print_summary: Print model summary if true
+        :param beta1: Exponential decay rate for the running average of the gradient
+        :param beta2: Exponential decay rate for the running average of the square of the gradient
+        :param epsilon: Epsilon parameter to prevent division by zero error
+        :return: Compiled Keras model, list of callbacks
+        """
+
+        resnet_model = self.model()
+        early_stopping, model_checkpoint, step_decay_lr = get_callbacks(self.save_path)
+        adam = Adam(lr=step_decay_lr, beta_1=beta1, beta_2=beta2, epsilon=epsilon)
+        auc = AUC(name="roc_auc")
+        resnet_model.compile(
+            loss="binary_crossentropy", optimizer=adam, metrics=["accuracy", auc]
+        )
+        if print_summary:
+            resnet_model.summary()
+
+        return resnet_model, [early_stopping, model_checkpoint]
