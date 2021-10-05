@@ -14,3 +14,5 @@ BRATS_VALIDATION_FOLDER: Path = DATA_FOLDER / "brats_data" / "MICCAI_BraTS2020_V
 PREPROCESSED_PATH: Path = DATA_FOLDER / "preprocessed"
 TRAIN_LABELS: Path = DATA_FOLDER / "train_labels.csv"
 SUBMISSION_PATH: Path = DATA_FOLDER / "sample_submission.csv"
+
+classes = ["0", "1"]
