@@ -128,7 +128,9 @@ class ResNet:
 
         resnet_model = self.model()
         early_stopping, model_checkpoint, step_decay_lr = get_callbacks(self.save_path)
-        adam = Adam(lr=step_decay_lr, beta_1=beta1, beta_2=beta2, epsilon=epsilon)
+        adam = Adam(
+            learning_rate=step_decay_lr, beta_1=beta1, beta_2=beta2, epsilon=epsilon
+        )
         auc = AUC(name="roc_auc")
         resnet_model.compile(
             loss="binary_crossentropy", optimizer=adam, metrics=["accuracy", auc]

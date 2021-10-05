@@ -2,11 +2,11 @@ default:
   N1: 64
   N2: 128
   N3: 32
-  kernel_size1: [2, 2]
+  kernel_size1: [2, 2, 2]
   pool_size1: 2
-  kernel_size2: [ 2, 2]
+  kernel_size2: [2, 2, 2]
   pool_size2: 2
-  kernel_size3: [2, 2]
+  kernel_size3: [2, 2, 2]
   pool_size3: 2
   dilation_rate1: 2
   dilation_rate2: 4

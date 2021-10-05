@@ -55,18 +55,14 @@ class RsnaDataGenerator(Sequence):
                 lambda x: tf.py_function(
                     func=self.load_numpy_volumes, inp=[x], Tout=[tf.float32]
                 ),
-                num_parallel_calls=tf.data.experimental.AUTOTUNE,
+                num_parallel_calls=tf.data.AUTOTUNE,
             )
 
         feature_dataset = feature_dataset.cache()
         feature_dataset = feature_dataset.batch(self.batch_size)
-        feature_dataset = feature_dataset.shuffle(
-            buffer_size=tf.data.experimental.AUTOTUNE
-        )
+        feature_dataset = feature_dataset.shuffle(3)
         feature_dataset = feature_dataset.repeat()
-        feature_dataset = feature_dataset.prefetch(
-            buffer_size=tf.data.experimental.AUTOTUNE
-        )
+        feature_dataset = feature_dataset.prefetch(buffer_size=tf.data.AUTOTUNE)
 
         if self.train:
             feature_batch, feature_label = next(iter(feature_dataset))
@@ -76,7 +72,7 @@ class RsnaDataGenerator(Sequence):
             return feature_batch
 
     def load_numpy_volumes(
-        self, feature_path: str
+        self, feature_path: tf.Tensor
     ) -> Union[Tuple[np.ndarray, np.ndarray], np.ndarray]:
         """
         Read numpy files
@@ -86,10 +82,12 @@ class RsnaDataGenerator(Sequence):
         data array for test
         """
 
-        feature_data = np.expand_dims(np.load(feature_path)["flair_volume"], axis=-1)
+        feature_data = np.expand_dims(
+            np.load(feature_path.numpy())["flair_volume"], axis=-1
+        )
 
         if self.train:
-            label_data = np.load(feature_path)["label"]
+            label_data = np.load(feature_path.numpy())["label"]
             return feature_data, label_data
 
         return feature_data
