@@ -66,6 +66,7 @@ class RsnaDataGenerator(Sequence):
 
         if self.train:
             feature_batch, feature_label = next(iter(feature_dataset))
+            breakpoint()
             return feature_batch, feature_label
         else:
             feature_batch = next(iter(feature_dataset))
