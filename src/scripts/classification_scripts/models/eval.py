@@ -43,7 +43,7 @@ def plot_history(
     if plot_show:
         plt.show()
 
-    plt.savefig(str(save_path / (model + ".png")), dpi=300)
+    plt.savefig(str(save_path / (model + ".png")))
 
 
 class EvalVisualize(object):
