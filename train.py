@@ -11,7 +11,14 @@ from src.scripts.classification_scripts.models.tl_model import TlModel
 from src.scripts.classification_scripts.models.nn_models import NnModel
 
 
-def train(model: NnModel) -> NoReturn:
+def train(model: NnModel, save_path: Path, model_name: str) -> NoReturn:
+    """
+    Function to train the model
+
+    :param model: Baseline or transfer learning model
+    :param save_path: Path to save the predictions
+    :param model_name: Name of the model to train
+    """
 
     compiled_model, callbacks = model.model_compile(print_summary=True)
     train_files = glob(str(TRAIN_NUMPY_FOLDER) + "/*.npz")
@@ -20,27 +27,22 @@ def train(model: NnModel) -> NoReturn:
     validation_generator = RsnaDataGenerator(
         data_path=validation_files, batch_size=1, train=True
     )
-    validation_generator_for_evaluation = RsnaDataGenerator(
-        data_path=validation_files, batch_size=32, train=False
-    )
     test_files = glob(str(TEST_NUMPY_FILES) + "/*.npz")
     test_generator = RsnaDataGenerator(data_path=test_files, batch_size=1, train=False)
-    breakpoint()
     print("Training...")
     compiled_model.fit(
         train_generator,
         validation_data=validation_generator,
         epochs=200,
         callbacks=callbacks,
-        use_multiprocessing=True,
-        workers=True,
     )
 
     print("Predicting on test set")
-    val_predict = compiled_model.predict(
-        validation_generator_for_evaluation, use_multiprocessing=True, workers=6
+    test_predict = compiled_model.predict(
+        test_generator, use_multiprocessing=True, workers=6
     )
-    predictions = np.argmax(val_predict, 1)
+    predictions = np.argmax(test_predict, 1)
+    np.savez_compressed(str(save_path / (model_name + ".npz")), predictions=predictions)
 
 
 if __name__ == "__main__":
@@ -86,5 +88,5 @@ if __name__ == "__main__":
         model_save_path = Path(DATA_FOLDER / "models" / model_)
         get_model = TlModel(model_save_path, model_)
 
-    train(get_model)
+    train(get_model, model_save_path, model_)
     breakpoint()

@@ -58,7 +58,7 @@ class RsnaDataGenerator(Sequence):
                 num_parallel_calls=tf.data.AUTOTUNE,
             )
 
-        feature_dataset = feature_dataset.cache()
+        # feature_dataset = feature_dataset.cache()
         feature_dataset = feature_dataset.batch(self.batch_size)
         feature_dataset = feature_dataset.shuffle(3)
         feature_dataset = feature_dataset.repeat()
@@ -66,7 +66,6 @@ class RsnaDataGenerator(Sequence):
 
         if self.train:
             feature_batch, feature_label = next(iter(feature_dataset))
-            breakpoint()
             return feature_batch, feature_label
         else:
             feature_batch = next(iter(feature_dataset))
