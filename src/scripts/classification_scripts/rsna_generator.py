@@ -43,24 +43,51 @@ class RsnaDataGenerator(Sequence):
         only feature batch data is returned
         """
 
-        start_index = index * self.batch_size
-        end_index = (index + 1) * self.batch_size
-        batch_path = self.data_path[start_index:end_index]
-
-        feature_batch = tf.convert_to_tensor(
-            np.array(
-                [
-                    np.expand_dims(np.load(feature)["flair_volume"], axis=-1)
-                    for feature in batch_path
-                ]
-            ),
-            dtype=tf.float32,
-        )
         if self.train:
-            label_batch = tf.convert_to_tensor(
-                np.array([np.load(feature)["label"] for feature in batch_path]),
-                dtype=tf.float32,
+            feature_dataset = tf.data.Dataset.from_tensor_slices(self.data_path).map(
+                lambda x: tf.py_function(
+                    func=self.load_numpy_volumes, inp=[x], Tout=[tf.float32, tf.float32]
+                ),
+                num_parallel_calls=tf.data.experimental.AUTOTUNE,
             )
-            return feature_batch, label_batch
         else:
+            feature_dataset = tf.data.Dataset.from_tensor_slices(self.data_path).map(
+                lambda x: tf.py_function(
+                    func=self.load_numpy_volumes, inp=[x], Tout=[tf.float32]
+                ),
+                num_parallel_calls=tf.data.AUTOTUNE,
+            )
+
+        # feature_dataset = feature_dataset.cache()
+        feature_dataset = feature_dataset.batch(self.batch_size)
+        feature_dataset = feature_dataset.shuffle(3)
+        feature_dataset = feature_dataset.repeat()
+        feature_dataset = feature_dataset.prefetch(buffer_size=tf.data.AUTOTUNE)
+
+        if self.train:
+            feature_batch, feature_label = next(iter(feature_dataset))
+            return feature_batch, feature_label
+        else:
+            feature_batch = next(iter(feature_dataset))
             return feature_batch
+
+    def load_numpy_volumes(
+        self, feature_path: tf.Tensor
+    ) -> Union[Tuple[np.ndarray, np.ndarray], np.ndarray]:
+        """
+        Read numpy files
+
+        :param feature_path: Path to numpy files
+        :return: Returns feature data array and labels for training/validation and only feature
+        data array for test
+        """
+
+        feature_data = np.expand_dims(
+            np.load(feature_path.numpy())["flair_volume"], axis=-1
+        )
+
+        if self.train:
+            label_data = np.load(feature_path.numpy())["label"]
+            return feature_data, label_data
+
+        return feature_data

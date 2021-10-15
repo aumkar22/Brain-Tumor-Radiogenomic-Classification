@@ -12,9 +12,14 @@ from tensorflow.keras.layers import (
 from tensorflow.keras.models import Model
 
 from src.scripts.classification_scripts.models.residual_layer import Residual
+from src.scripts.classification_scripts.models.nn_models import NnModel
 
 
-class ResNet:
+class ResNet(NnModel):
+    """
+    Baseline ResNet model
+    """
+
     def __init__(
         self,
         N1,
@@ -34,10 +39,9 @@ class ResNet:
         Nfc2,
         dropout1,
         dropout2,
-        out=1,
-        input_shape=(30, 240, 240, 1),
+        save_path,
     ):
-
+        super().__init__(save_path)
         self.N1 = N1
         self.N2 = N2
         self.N3 = N3
@@ -55,10 +59,14 @@ class ResNet:
         self.dilation_rate4 = dilation_rate4
         self.dropout1 = dropout1
         self.dropout2 = dropout2
-        self.out = out
-        self.input_shape = input_shape
+        self.save_path = save_path
 
-    def model(self) -> tf.Model:
+    def model_architecture(self) -> tf.Model:
+        """
+        Baseline ResNet architecture
+
+        :return:
+        """
 
         model_input = Input(shape=self.input_shape)
 
