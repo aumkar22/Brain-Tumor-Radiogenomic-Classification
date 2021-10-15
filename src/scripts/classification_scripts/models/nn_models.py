@@ -54,7 +54,7 @@ class NnModel(ABC):
         """
 
         path_check(save_path, True)
-        early_stopping = EarlyStopping(monitor="val_roc_auc", patience=3, mode="max")
+        early_stopping = EarlyStopping(monitor="val_roc_auc", patience=5, mode="max")
         model_checkpoint = ModelCheckpoint(
             filepath=save_path, monitor="val_roc_auc", save_best_only=True, mode="max"
         )
