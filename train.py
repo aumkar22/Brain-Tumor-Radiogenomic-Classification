@@ -9,6 +9,7 @@ from src.scripts.classification_scripts.rsna_generator import RsnaDataGenerator
 from src.scripts.classification_scripts.models.base_model import ResNet
 from src.scripts.classification_scripts.models.tl_model import TlModel
 from src.scripts.classification_scripts.models.nn_models import NnModel
+from src.scripts.classification_scripts.models.eval import plot_history
 
 
 def train(model: NnModel, save_path: Path, model_name: str) -> NoReturn:
@@ -30,12 +31,13 @@ def train(model: NnModel, save_path: Path, model_name: str) -> NoReturn:
     test_files = glob(str(TEST_NUMPY_FILES) + "/*.npz")
     test_generator = RsnaDataGenerator(data_path=test_files, batch_size=1, train=False)
     print("Training...")
-    compiled_model.fit(
+    history = compiled_model.fit(
         train_generator,
         validation_data=validation_generator,
         epochs=200,
         callbacks=callbacks,
     )
+    plot_history(history, save_path, model_name, True)
 
     print("Predicting on test set")
     test_predict = compiled_model.predict(

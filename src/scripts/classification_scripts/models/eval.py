@@ -9,9 +9,41 @@ from sklearn.metrics import (
     confusion_matrix,
     classification_report,
 )
+from tensorflow.keras.callbacks import History
 
 from src.util.definitions import classes
 from src.util.folder_check import path_check
+
+
+def plot_history(
+    history: History, save_path: Path, model: str, plot_show: bool = False
+) -> NoReturn:
+    """
+    Function to plot model performance on validation set
+
+    :param history: History callback
+    :param save_path: Path to save the plot
+    :param model: Trained model name
+    :param plot_show: Display plot if True
+    """
+
+    fig, (ax1, ax2, ax3) = plt.subplots(3, 1, figsize=(15, 15))
+    fig.suptitle(f"{model} performance on validation set")
+
+    ax1.plot(history.history["val_loss"])
+    ax1.set_ylabel("Loss")
+
+    ax2.plot(history.history["val_accuracy"])
+    ax2.set_ylabel("Accuracy")
+
+    ax3.plot(history.history["val_roc_auc"])
+    ax3.set_ylabel("AUC")
+    ax3.set_xlabel("Epoch")
+
+    if plot_show:
+        plt.show()
+
+    plt.savefig(str(save_path / (model + ".png")), dpi=300)
 
 
 class EvalVisualize(object):
