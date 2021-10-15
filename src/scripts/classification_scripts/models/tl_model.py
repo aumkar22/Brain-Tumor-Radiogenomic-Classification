@@ -3,7 +3,7 @@ import efficientnet_3D.tfkeras as efn
 
 from tensorflow.keras import Input
 from tensorflow.keras.models import Model
-from tensorflow.keras.layers import GlobalAveragePooling3D, Dense, Conv3D
+from tensorflow.keras.layers import GlobalAveragePooling3D, Dense, Conv3D, Dropout
 from classification_models_3D.tfkeras import Classifiers
 from pathlib import Path
 
@@ -46,6 +46,8 @@ class TlModel(NnModel):
 
         pool = GlobalAveragePooling3D()(extracted_features_out)
 
-        out = Dense(self.out, activation="sigmoid")(pool)
+        drop = Dropout(0.6)(pool)
+
+        out = Dense(self.out, activation="sigmoid")(drop)
 
         return Model(inputs=input_tensor, outputs=out)
