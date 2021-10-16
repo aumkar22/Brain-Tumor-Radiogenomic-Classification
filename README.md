@@ -89,3 +89,17 @@ Brain-Tumor-Radiogenomic-Classification
 |     |   train_labels.csv                                 // File containing the target MGMT_value for each patient in the train data
       
 ```
+
+## MRI Slice
+
+### Original
+
+![](https://i.imgur.com/4LDS5XJ.png)
+
+### Preprocessed
+
+![](https://i.imgur.com/0DChBzf.png)
+
+### Cropped and resized
+
+![](https://i.imgur.com/GCp8TpG.png)
