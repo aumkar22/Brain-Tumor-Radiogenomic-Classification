@@ -4,7 +4,7 @@ import csv
 from typing import NoReturn, Tuple
 from sklearn.model_selection import GroupShuffleSplit
 
-from src.scripts.classification_scripts.rsna_load import RsnaLoad
+from src.scripts.rsna_load import RsnaLoad
 from src.util.definitions import *
 from src.util.folder_check import path_check
 
