@@ -11,8 +11,8 @@ from tensorflow.keras.layers import (
 )
 from tensorflow.keras.models import Model
 
-from src.scripts.classification_scripts.models.residual_layer import Residual
-from src.scripts.classification_scripts.models.nn_models import NnModel
+from src.models.residual_layer import Residual
+from src.models.nn_models import NnModel
 
 
 class ResNet(NnModel):

@@ -7,7 +7,7 @@ from tensorflow.keras.layers import GlobalAveragePooling3D, Dense, Conv3D, Dropo
 from classification_models_3D.tfkeras import Classifiers
 from pathlib import Path
 
-from src.scripts.classification_scripts.models.nn_models import NnModel
+from src.models.nn_models import NnModel
 
 
 class TlModel(NnModel):

@@ -5,11 +5,11 @@ import numpy as np
 from typing import NoReturn
 
 from src.util.definitions import *
-from src.scripts.classification_scripts.rsna_generator import RsnaDataGenerator
-from src.scripts.classification_scripts.models.base_model import ResNet
-from src.scripts.classification_scripts.models.tl_model import TlModel
-from src.scripts.classification_scripts.models.nn_models import NnModel
-from src.scripts.classification_scripts.models.eval import plot_history
+from src.scripts.rsna_generator import RsnaDataGenerator
+from src.models.base_model import ResNet
+from src.models.tl_model import TlModel
+from src.models.nn_models import NnModel
+from src.models.eval import plot_history
 
 
 def train(model: NnModel, save_path: Path, model_name: str) -> NoReturn:
