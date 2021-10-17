@@ -60,7 +60,7 @@ class RsnaLoad:
         if self.train:
             dicom_path = Path(self.data_path.parent / "train" / self.patient / "FLAIR")
         else:
-            dicom_path = Path(self.data_path.parent / "test" / self.patient / "FLAIR")
+            dicom_path = Path(self.data_path / "test" / self.patient / "FLAIR")
 
         dicom_list = [str(i) for i in dicom_path.glob(r"**/*.dcm")]
         dicom_list.sort(key=lambda x: int(x.split("-")[-1][:-4]))
@@ -113,7 +113,8 @@ class RsnaLoad:
             )
         else:
             np.savez_compressed(
-                str(self.data_path / (self.patient + ".npz")), flair_volume=dicom_volume
+                str(self.data_path / "test_npy" / (self.patient + ".npz")),
+                flair_volume=dicom_volume,
             )
 
     @staticmethod

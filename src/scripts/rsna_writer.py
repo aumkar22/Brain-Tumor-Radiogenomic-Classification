@@ -70,9 +70,13 @@ def read_rsna_csv(rsna_csv: Path, train: bool) -> NoReturn:
 
 if __name__ == "__main__":
 
+    print("RSNA writer...")
+
+    breakpoint()
     train_df, val_df = create_splits(TRAIN_LABELS)
     to_csv(train_df, DATA_FOLDER, True)
     to_csv(val_df, DATA_FOLDER)
     read_rsna_csv(Path(DATA_FOLDER / "train_npy" / "data_labels.csv"), True)
     read_rsna_csv(Path(DATA_FOLDER / "validation_npy" / "data_labels.csv"), True)
-    read_rsna_csv(Path(DATA_FOLDER / "test_npy" / "sample_submission.csv"), False)
+    path_check(Path(DATA_FOLDER / "test_npy"), True)
+    read_rsna_csv(Path(DATA_FOLDER / "sample_submission.csv"), False)
