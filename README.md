@@ -9,7 +9,13 @@ Install dependencies as:
 pip install -r requirements.txt
 ```
 
-You can run this code from command line as
+To preprocess and save preprocessed volumes as compressed numpy files, run this code from the command line:
+
+```
+python -m src.scripts.rsna_writer
+```
+
+To train a model, run this code from the command line:
 
 ```
 python train.py -m resnet101
@@ -89,17 +95,3 @@ Brain-Tumor-Radiogenomic-Classification
 |     |   train_labels.csv                                 // File containing the target MGMT_value for each patient in the train data
       
 ```
-
-## MRI Slice
-
-### Original
-
-![](https://i.imgur.com/4LDS5XJ.png)
-
-### Preprocessed
-
-![](https://i.imgur.com/0DChBzf.png)
-
-### Cropped and resized
-
-![](https://i.imgur.com/GCp8TpG.png)
