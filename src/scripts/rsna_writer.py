@@ -70,9 +70,6 @@ def read_rsna_csv(rsna_csv: Path, train: bool) -> NoReturn:
 
 if __name__ == "__main__":
 
-    print("RSNA writer...")
-
-    breakpoint()
     train_df, val_df = create_splits(TRAIN_LABELS)
     to_csv(train_df, DATA_FOLDER, True)
     to_csv(val_df, DATA_FOLDER)
